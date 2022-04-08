@@ -11,6 +11,7 @@ async def send_welcome(message: types.Message):
     """
     await message.reply("Привет!\nМожно узнать наличие по блюдами, либо сделать заказ на нужную дату.",
                         reply_markup=keyboard.check_menu)
+    print(message.from_user.id)
 
 # @dp.callback_query_handler(lambda c: c.data == 'order_menu')
 async def process_callback_button1(callback_query: types.CallbackQuery):
