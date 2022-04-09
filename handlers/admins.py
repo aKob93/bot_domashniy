@@ -6,7 +6,6 @@ from create_bot import dp, bot
 import conf
 from database import sqlite_db
 from keyboard import button_case_admin
-
 ID = None
 
 
@@ -25,7 +24,7 @@ async def make_changes_command(message: types.Message):
         ID = message.from_user.id
 
         await message.reply('Ты повелеваешь мной', reply_markup=button_case_admin)
-        await message.delete()
+        # await message.delete()
     else:
         await message.reply('You Shall Not Pass')
 
@@ -40,6 +39,13 @@ async def cancel_handler(message: types.Message, state: FSMContext):
             return
         await state.finish()
         await message.reply('OK')
+
+
+async def select_table(message: types.Message):
+    if message.from_user.id == ID:
+        texts = sqlite_db.sql_select()
+        await message.reply(texts)
+
 
 
 # Начало диалога загрузки нового пункта меню
@@ -87,6 +93,7 @@ async def load_price(message: types.Message, state: FSMContext):
 # Регситрируем хэндлеры
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(cm_start, commands='Загрузить', state=None)
+    dp.register_message_handler(select_table, commands='Просмотр', state=None)
     dp.register_message_handler(cancel_handler, state="*", commands='отмена')
     dp.register_message_handler(cancel_handler, Text(equals='отмена', ignore_case=True), state="*")
     dp.register_message_handler(load_photo, content_types=['photo'], state=FSMAdmin.photo)

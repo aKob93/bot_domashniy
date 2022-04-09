@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 async def on_startup(_): #Бот запустился(в будующем подключение к бд)
     print('Бот онлайн')
-    # sqlite_db.sql_start()
+    sqlite_db.sql_start()
 
 
 clients.register_handlers_client(dp)
