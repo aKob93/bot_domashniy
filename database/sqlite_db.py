@@ -14,7 +14,6 @@ def sql_start():
 
 def sql_select():
     cur.execute('SELECT name_product FROM products WHERE type_product = "fishes"')
-
     rows = cur.fetchall()
     return rows
     #     # print(f'тип продукта - {row[0]}\n'
