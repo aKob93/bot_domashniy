@@ -26,8 +26,8 @@ async def make_changes_command(message: types.Message):
     if message.from_user.id in conf.ID_ADMIN:
 
         ID = message.from_user.id
-
         await message.reply('Ты повелеваешь мной', reply_markup=menu_admin)
+        await FSMAdmin.select_product.set()
 
         # await message.delete()
     else:
@@ -45,10 +45,6 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         await state.finish()
         await message.reply('OK')
 
-#TODO: сделать через состояния
-async def some_func(message: types.Message):
-    await message.reply('dfgdf')
-
 
 # инлайн кнопки
 # async def out_table(callback_query: types.CallbackQuery):
@@ -57,18 +53,23 @@ async def some_func(message: types.Message):
 #     await bot.send_message(callback_query.from_user.id, 'выбери категорию', reply_markup=btn)
 #     product = callback_query.message
 
-async def select_table(message: types.Message):
-    await message.reply('product')
-    # await message.answer(text='Отправляю список категорий!')
-    # btn = keyboard.btn()
-    # await message.reply(text='выбери категорию', reply_markup=btn)
-    # product = message.text
-    # await message.reply(product)
+async def select_category(message: types.Message):
+    if message.from_user.id == ID:
+        btn = keyboard.btn()
 
+        await message.answer(text='Отправляю список категорий!', reply_markup=btn)
+        await FSMAdmin.next()
+        # product = message.text
+        # await message.reply(message.text, '231321')
 
-# async def select_table(message: types.Message):
-#     product = message.text
-#     await message.reply(product)
+async def select_product(message: types.Message, state: FSMContext):
+
+    text = message.text
+    name_price_products = sqlite_db.select_name_price_product(text)
+    for name_price in name_price_products:
+        await message.answer(name_price)
+    await state.finish()
+
 
 # Начало диалога загрузки нового пункта меню
 # @dp.message_handler(commands='Загрузить', state=None)
@@ -114,17 +115,18 @@ async def select_table(message: types.Message):
 
 # Регситрируем хэндлеры
 def register_handlers_admin(dp: Dispatcher):
+
     # dp.register_message_handler(cm_start, commands='Загрузить', state=None)
     dp.register_message_handler(cancel_handler, state="*", commands='отмена')
     dp.register_message_handler(cancel_handler, Text(equals='отмена', ignore_case=True), state="*")
 
     # dp.register_callback_query_handler(out_table, lambda c: c.data == 'select_dat')
-    dp.register_message_handler(some_func, commands='Просмотр данных')
-    # dp.register_message_handler(select_table, commands='Просмотр данных')
-    # dp.register_message_handler(select_table, state=None)
+
+    dp.register_message_handler(select_category, commands='Просмотр', state=FSMAdmin.select_product)
+    dp.register_message_handler(select_product, state=FSMAdmin.name)
 
     # dp.register_message_handler(load_photo, content_types=['photo'], state=FSMAdmin.photo)
     # dp.register_message_handler(load_name, state=FSMAdmin.name)
     # dp.register_message_handler(load_price, state=FSMAdmin.price)
-    dp.register_message_handler(make_changes_command, commands='good')
+    dp.register_message_handler(make_changes_command, commands='good', state=None)
     # dp.register_message_handler(select_choice, )

@@ -1,4 +1,6 @@
+import re
 import sqlite3 as sq
+from conf import type_product
 
 #Создание/подключение бд
 def sql_start():
@@ -11,14 +13,17 @@ def sql_start():
     base.commit()#сохранение изменений
 
 
+#Выбор из таблицы название продукат и цену
+def select_name_price_product(category):
+    cur.execute(f'SELECT name_product, price FROM products WHERE type_product = "{type_product[category]}"')
+    rows_data = cur.fetchall()
+    name_price_products = []
+    for data in rows_data:
+        patern = "[(',)]"
+        data = re.sub(patern, '', str(data))#убирает лишние символы по patern
 
-def sql_select():
-    cur.execute('SELECT name_product FROM products WHERE type_product = "fishes"')
-    rows = cur.fetchall()
-    return rows
-    #     # print(f'тип продукта - {row[0]}\n'
-    #     #       f'название продукта - {row[1]}\n'
-    #     #       f'цена - {row[2]}')
+        name_price_products.append(data)
+    return name_price_products
 
 async def sql_add_command(state):
     async with state.proxy() as data:

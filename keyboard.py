@@ -12,10 +12,10 @@ check_menu.insert(btn_order_menu)
 
 #Кнопки клавиатуры админа
 
-btn_select = KeyboardButton(text='Просмотр данных')
-btn_changing_data = KeyboardButton(text='Изменение данных')
-btn_delete_data = KeyboardButton(text='Удаление данных')
-menu_admin = ReplyKeyboardMarkup(row_width=1)
+btn_select = KeyboardButton('/Просмотр')
+btn_changing_data = KeyboardButton(text='/Изменение')
+btn_delete_data = KeyboardButton(text='/Удаление')
+menu_admin = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True)
 menu_admin.add(btn_select, btn_changing_data, btn_delete_data)
 
 # btn_select = InlineKeyboardButton(text='Просмотр данных', callback_data='select_dat')
@@ -30,10 +30,10 @@ menu_admin.add(btn_select, btn_changing_data, btn_delete_data)
 
 #Кнопки продуктов
 def btn(*type_prod):
-    greet_kb = ReplyKeyboardMarkup()
-    for i in type_product.values():
+    greet_kb = ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True)
+    for i in type_product.keys():
         button_hi = KeyboardButton(i)
-        greet_kb.add(button_hi)
+        greet_kb.insert(button_hi)
     return greet_kb
 
 
