@@ -11,12 +11,24 @@ from keyboard import menu_admin
 from conf import type_product
 
 ID = None
-text_choice = ''
+text_price = ''
+text_name = ''
+list_category = []
 
 
-class FSMAdmin(StatesGroup):
+class FSMAdminSelect(StatesGroup):
     select_product = State()
-    name = State()
+
+
+class FSMAdminChanges(StatesGroup):
+    changes = State()
+    changes_product = State()
+    some = State()
+
+class FSMAdminAdd(StatesGroup):
+    add_tab = State()
+    add_name = State()
+    add_price = State()
 
 
 # Получаем ID текущего админа
@@ -27,8 +39,6 @@ async def make_changes_command(message: types.Message):
 
         ID = message.from_user.id
         await message.reply('Ты повелеваешь мной', reply_markup=menu_admin)
-        await FSMAdmin.select_product.set()
-
         # await message.delete()
     else:
         await message.reply('You Shall Not Pass')
@@ -46,21 +56,14 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         await message.reply('OK')
 
 
-# инлайн кнопки
-# async def out_table(callback_query: types.CallbackQuery):
-#     await callback_query.answer(text='Отправляю список категорий!')
-#     btn = keyboard.btn()
-#     await bot.send_message(callback_query.from_user.id, 'выбери категорию', reply_markup=btn)
-#     product = callback_query.message
-
 async def select_category(message: types.Message):
     if message.from_user.id == ID:
         btn = keyboard.btn()
 
         await message.answer(text='Отправляю список категорий!', reply_markup=btn)
-        await FSMAdmin.next()
-        # product = message.text
-        # await message.reply(message.text, '231321')
+        await message.delete()
+        await FSMAdminSelect.select_product.set()
+
 
 async def select_product(message: types.Message, state: FSMContext):
 
@@ -68,65 +71,97 @@ async def select_product(message: types.Message, state: FSMContext):
     name_price_products = sqlite_db.select_name_price_product(text)
     for name_price in name_price_products:
         await message.answer(name_price)
+    await message.answer('Конец', reply_markup=menu_admin)
     await state.finish()
 
 
-# Начало диалога загрузки нового пункта меню
-# @dp.message_handler(commands='Загрузить', state=None)
-# async def cm_start(message: types.Message):
-#     if message.from_user.id == ID:
-#         await FSMAdmin.photo.set()
-#         await message.reply('Загрузи фото')
 
 
-# Ловим первый ответ и пишем словарь(переходим в состояние "фото")
-# @dp.message_handler(content_types=['photo'], state=FSMAdmin.photo)
-# async def load_photo(message: types.Message, state: FSMContext):
-#     # сохранение полученного рез-та в словарь
-#     # сохранеятся не само фото а его айди
-#     if message.from_user.id == ID:
-#         async with state.proxy() as data:
-#             data['photo'] = message.photo[0].file_id
-#         # переводим бота в ожидание следующего ответа
-#         await FSMAdmin.next()
-#         await message.reply('Теперь введи название')
-#
-#
-# # Ловим второй ответ
-# # @dp.message_handler(state=FSMAdmin.name)
-# async def load_name(message: types.Message, state: FSMContext):
-#     if message.from_user.id == ID:
-#         async with state.proxy() as data:
-#             data['name'] = message.text
-#         await FSMAdmin.next()
-#         await message.reply('Введи price')
-#
-#
-# # Ловим последний ответ и используем полученные данные
-# # @dp.message_handler(state=FSMAdmin.price)
-# async def load_price(message: types.Message, state: FSMContext):
-#     if message.from_user.id == ID:
-#         async with state.proxy() as data:
-#             data['price'] = float(message.text)
-#         await sqlite_db.sql_add_command(state)
-#         # Бот выходит из машины состояний, очищает словарь
-#         await state.finish()
+
+async def changes_product_select(message: types.Message):
+    if message.from_user.id == ID:
+        await FSMAdminChanges.changes.set()
+        btn = keyboard.btn()
+        await message.answer(text='Отправляю список категорий для изменения!', reply_markup=btn)
+        await message.delete()
+
+async def changes(message: types.Message):
+    text = message.text
+    btn_prod = keyboard.btn_prod(text)
+    await message.answer(text='выбери продукт', reply_markup=btn_prod)
+    await FSMAdminChanges.next()
+
+
+async def changes_category(message: types.Message):
+    global text_name
+
+    if message.from_user.id == ID:
+        text_name = message.text
+        await message.answer(text='напиши цену')
+
+        await FSMAdminChanges.next()
+
+async def some_func(message: types.Message, state: FSMContext):
+        global text_price
+        text_price = message.text
+        sqlite_db.select_chages(text_name, text_price)
+        #TODO сделать проверку на дробное число,выдаёт ошибку если разделитель ","
+        await message.answer('Значение обновлено', reply_markup=menu_admin)
+        await state.finish()
+
+
+async def add_table(message: types.Message):
+    if message.from_user.id == ID:
+        await FSMAdminAdd.add_tab.set()
+        btn = keyboard.btn()
+        await message.answer(text='Отправляю список категорий для добавления!', reply_markup=btn)
+
+        # await message.delete()
+text_category = ''
+async def add_category(message: types.Message):
+    global text_category
+    text_category = message.text
+    await message.answer(f'Добавление в категорию {text_category}:')
+    await FSMAdminAdd.next()
+
+text_add_name = ''
+async def add_name(message:types.Message):
+    global text_add_name
+    text_add_name = message.text
+    await message.answer(f'Добавление цены для {text_add_name}:')
+    await FSMAdminAdd.next()
+
+text_add_price = ''
+async def add_price(message:types.Message, state: FSMContext):
+    global text_add_price
+    text_add_price = message.text
+    await sqlite_db.sql_add_command(text_category, text_add_name, text_add_price)
+    await message.answer('Значение добавлено', reply_markup=menu_admin)
+    await state.finish()
+
+
+
 
 
 # Регситрируем хэндлеры
 def register_handlers_admin(dp: Dispatcher):
+    dp.register_message_handler(make_changes_command, commands='good', state=None)
 
-    # dp.register_message_handler(cm_start, commands='Загрузить', state=None)
     dp.register_message_handler(cancel_handler, state="*", commands='отмена')
     dp.register_message_handler(cancel_handler, Text(equals='отмена', ignore_case=True), state="*")
 
-    # dp.register_callback_query_handler(out_table, lambda c: c.data == 'select_dat')
+    dp.register_message_handler(select_category, commands='Просмотр', state=None)
+    dp.register_message_handler(select_product, state=FSMAdminSelect.select_product)
 
-    dp.register_message_handler(select_category, commands='Просмотр', state=FSMAdmin.select_product)
-    dp.register_message_handler(select_product, state=FSMAdmin.name)
+    dp.register_message_handler(changes_product_select, commands='Изменение', state=None)
+    dp.register_message_handler(changes, state=FSMAdminChanges.changes)
+    dp.register_message_handler(changes_category, state=FSMAdminChanges.changes_product)
+    dp.register_message_handler(some_func, state=FSMAdminChanges.some)
 
-    # dp.register_message_handler(load_photo, content_types=['photo'], state=FSMAdmin.photo)
-    # dp.register_message_handler(load_name, state=FSMAdmin.name)
-    # dp.register_message_handler(load_price, state=FSMAdmin.price)
-    dp.register_message_handler(make_changes_command, commands='good', state=None)
-    # dp.register_message_handler(select_choice, )
+
+    dp.register_message_handler(add_table, commands='Добавление', state=None)
+    dp.register_message_handler(add_category, state=FSMAdminAdd.add_tab)
+    dp.register_message_handler(add_name, state=FSMAdminAdd.add_name)
+    dp.register_message_handler(add_price, state=FSMAdminAdd.add_price)
+
+
