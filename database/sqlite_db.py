@@ -9,8 +9,7 @@ def sql_start():
     cur = base.cursor()#создание курсора
     if base:
         print('DataBase connected OK')
-    base.execute('CREATE TABLE IF NOT EXISTS products(type_product TEXT, name_product TEXT, price TEXT)')#создаём таблицу бд(excecute - создание если нет)
-    base.commit()#сохранение изменений
+
 
 
 #Выбор из таблицы название продукта и цену
@@ -42,7 +41,40 @@ def select_chages(name_product, price):
     cur.execute(f'UPDATE products SET price = {price} WHERE name_product = "{name_product}";')
     base.commit()
 
+
+
 #Добавление данных
 async def sql_add_command(category, name, price):
-    cur.execute(f'INSERT INTO products (type_product, name_product, price) VALUES ("{type_product[category]}", "{name}", {price})')
+    cur.execute(f'INSERT INTO products (type_product, name_product, price) VALUES '
+                f'("{type_product[category]}", "{name}", {price})')
+    base.commit()
+
+
+
+#Удаление данных
+async def sql_del(name):
+    # print(f'DELETE FROM products WHERE name_product = "{name}";')
+    cur.execute(f'DELETE FROM products WHERE name_product = "{name}";')
+    base.commit()
+
+# подсчёт брутто цена за кг продукта
+async def get_percent_price(prod):
+
+    percent = cur.execute(f'SELECT percent_off FROM products WHERE name_product = "{prod}";').fetchall()
+    price = cur.execute(f'SELECT price FROM products WHERE name_product = "{prod}"').fetchall()
+    patern = "[](',)[]"
+    percent = re.sub(patern, '', str(percent))
+    price = re.sub(patern, '', str(price))
+    return percent, price
+
+
+#Создание таблицыс блюдом
+async def create_table_dish(name_dishes):
+    cur.execute(f'CREATE TABLE {name_dishes} (products TEXT, brutto REAL, netto REAL, price_kg REAL, summ REAL)')
+    base.commit()
+
+#Добавление блюд в таблицу
+async def add_table_dish(name_dishes, name_product, brutto_product, netto_product, price_kg, summ):
+    cur.execute(f'INSERT INTO {name_dishes} (products, brutto, netto, price_kg, summ) '
+                f'VALUES ("{name_product}", {brutto_product}, {netto_product}, {price_kg}, {summ})')
     base.commit()
