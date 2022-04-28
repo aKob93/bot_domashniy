@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 import re
-from conf import type_product
+from conf import type_product, type_menu
 from database.sqlite_db import CUR, PATTERN
 
 
@@ -66,6 +67,7 @@ def get_name_price_menu(type_name):
     CUR.execute(f"SELECT name, price FROM menu WHERE type_menu = '{type_name}';")
     rows_data = CUR.fetchall()
     names_prices_products = [re.sub(PATTERN, '', str(data)) for data in rows_data]
+    names_prices_products = names_prices_products[0].split()
     return names_prices_products
 
 
@@ -76,6 +78,12 @@ def get_name_from_menu():
     names_from_menu = [re.sub(PATTERN, '', str(data)) for data in rows_data]
     return names_from_menu
 
+# Получение блюд из меню по категориям
+def get_name_dish_from_menu(category):
+    CUR.execute(f'SELECT name FROM menu WHERE type_menu = "{type_menu[category]}";')
+    rows_data = CUR.fetchall()
+    names_from_menu = [re.sub(PATTERN, '', str(data)) for data in rows_data]
+    return names_from_menu
 
 # Получение имён и цен из products
 def get_names_prices_from_product():
@@ -104,3 +112,14 @@ def get_brutto(name, product):
     brutto = CUR.fetchall()
     brutto = re.sub(PATTERN, '', str(brutto))
     return brutto
+
+# Получние состава блюда
+def get_structure(name_dish):
+    CUR.execute(f'SELECT products, brutto, netto, price_kg, summ FROM "{name_dish}";')
+    structures = CUR.fetchall()
+    data_structures = []
+    for structure in structures:
+        structure = re.sub("[](')[]", '', str(structure))
+        data_structures.append(structure.split(','))
+    return data_structures
+

@@ -8,7 +8,7 @@ from database import sqlite_db
 logging.basicConfig(level=logging.INFO)
 
 
-async def on_startup(_): #Бот запустился(в будующем подключение к бд)
+async def on_startup(_):
     print('Бот онлайн')
     sqlite_db.sql_start()
 

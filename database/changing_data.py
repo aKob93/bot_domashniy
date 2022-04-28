@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from conf import type_product, type_menu
 from database.sqlite_db import CUR, BASE
 from database import data_request

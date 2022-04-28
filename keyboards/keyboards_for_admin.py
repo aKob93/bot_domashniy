@@ -40,7 +40,7 @@ def create_keyboard_category_products():
     keyboard_category_products = InlineKeyboardMarkup(row_width=2)
     for category in type_product.keys():
         btn_category = InlineKeyboardButton(text=category, callback_data=category)
-        keyboard_category_products.add(btn_category)
+        keyboard_category_products.insert(btn_category)
     return keyboard_category_products
 
 
@@ -59,7 +59,7 @@ def create_keyboard_products(category):
     products = data_request.get_names_for_keyboard(category)
     for product in products:
         btn_product = InlineKeyboardButton(text=product, callback_data=product)
-        keyboard_products.add(btn_product)
+        keyboard_products.insert(btn_product)
     return keyboard_products
 
 
@@ -83,17 +83,36 @@ def create_keyboard_name_from_menu(type):
 
 
 # Клавиатура да/нет
-def create_keybord_yes_or_no():
-    keybord_yes_no = InlineKeyboardMarkup(row_width=2)
+def create_keyboard_yes_or_no():
+    keyboard_yes_no = InlineKeyboardMarkup(row_width=2)
     btn_yes = InlineKeyboardButton(text='Да', callback_data='Yes')
     btn_no = InlineKeyboardButton(text='Нет', callback_data='No')
-    keybord_yes_no.add(btn_yes, btn_no)
-    return keybord_yes_no
+    keyboard_yes_no.add(btn_yes, btn_no)
+    return keyboard_yes_no
 
 
 # Клавиатура да
-def create_keybord_yes():
-    keybord_yes = InlineKeyboardMarkup()
+def create_keyboard_yes():
+    keyboard_yes = InlineKeyboardMarkup()
     btn_yes = InlineKeyboardButton(text='Да', callback_data='ye')
-    keybord_yes.insert(btn_yes)
-    return keybord_yes
+    keyboard_yes.insert(btn_yes)
+    return keyboard_yes
+
+
+# Клавиатура цена или состав
+def create_keyboard_price_or_structure():
+    keyboard_price_or_structure = InlineKeyboardMarkup()
+    btn_price = InlineKeyboardButton(text='Цена блюда', callback_data='Цена блюда')
+    btn_structure = InlineKeyboardButton(text='Состав блюда', callback_data='Состав блюда')
+    keyboard_price_or_structure.add(btn_price, btn_structure)
+    return keyboard_price_or_structure
+
+
+# Клавиатура блюд
+def create_keyboard_dishes(category):
+    keyboard_dishes = InlineKeyboardMarkup(row_width=2)
+    dishes = data_request.get_name_dish_from_menu(category)
+    for dish in dishes:
+        btn_dish = InlineKeyboardButton(text=dish, callback_data=dish)
+        keyboard_dishes.insert(btn_dish)
+    return keyboard_dishes
