@@ -8,8 +8,11 @@ from database.sqlite_db import CUR, PATTERN
 def get_name_price_from_table_products(category):
     CUR.execute(f'SELECT name_product, price, percent_loss FROM products '
                 f'WHERE type_product = "{type_product[category]}";')
-    rows_data = CUR.fetchall()
-    name_price_percent_products = [re.sub(PATTERN, '', str(data)) for data in rows_data]
+    data_products = CUR.fetchall()
+    name_price_percent_products = []
+    for name_price_percent in data_products:
+        name_price_percent = re.sub("[](')[]", '', str(name_price_percent))
+        name_price_percent_products.append(name_price_percent.split(','))
     return name_price_percent_products
 
 

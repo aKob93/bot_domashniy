@@ -12,26 +12,31 @@ from keyboards import keyboards_for_admin
 ID = None
 
 
+# Машина состояний для просмотра продуктов
 class FSMAdminSelectCategoryProducts(StatesGroup):
     select_category = State()
 
 
+# Машина состояний для просмотра меню
 class FSMAdminSelectCategoryMenu(StatesGroup):
     select_category = State()
     select_choice_price_or_structure = State()
     select_name_dish = State()
 
 
+# Машина состояний для удаления продуктов
 class FSMAdminDelProducts(StatesGroup):
     select_del_category = State()
     select_del_name_product = State()
 
 
+# Машина состояний для удаления блюд
 class FSMAdminDelMenu(StatesGroup):
     select_del_category = State()
     select_del_name = State()
 
 
+# Машина состояний для изменения продуктов
 class FSMAdminChangesProduct(StatesGroup):
     select_changes_category = State()
     select_changes_name = State()
@@ -41,6 +46,7 @@ class FSMAdminChangesProduct(StatesGroup):
     select_changes_finish = State()
 
 
+# Машина состояний для добавления продуктов
 class FSMAdminAddProduct(StatesGroup):
     select_category_for_add = State()
     select_name_product = State()
@@ -48,6 +54,7 @@ class FSMAdminAddProduct(StatesGroup):
     select_percent_product = State()
 
 
+# Машина состояний для добавления блюда
 class FSMAdminAddDishes(StatesGroup):
     select_category_dish = State()
     select_name_dish = State()
@@ -70,7 +77,7 @@ async def make_changes_command(message: types.Message):
 
 # Выход из состояний
 # @dp.message_handler(state="*", commands='отмена')#Ползьзователь выбирает команду отмена. state="*" из любого состояния
-# @dp.message_handler(Text(equals='отмена', ignore_case=True), state="*")#Пользователь пишут отмена
+# @dp.message_handler(Text(equals='отмена', ignore_case=True), state="*")#Пользователь пишет отмена
 async def cancel_handler(message: types.Message, state: FSMContext):
     if message.from_user.id == ID:
         current_state = await state.get_state()
@@ -81,6 +88,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         await message.reply('OK', reply_markup=start_keyboard)
 
 
+# Выбор для просмотра - продукты или меню
 async def choice_menu_and_products(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         keyboard_products_menu = keyboards_for_admin.create_keyboard_products_menu()
@@ -88,12 +96,14 @@ async def choice_menu_and_products(callback_query: types.CallbackQuery):
                                                reply_markup=keyboard_products_menu)
 
 
+# Выбор категории блюда
 async def select_category_dish(callback_query: types.CallbackQuery):
     keyboard_category_dishes = keyboards_for_admin.create_keyboard_category_dishes()
     await callback_query.message.edit_text(text='Выбери категорию блюда', reply_markup=keyboard_category_dishes)
     await FSMAdminSelectCategoryMenu.select_category.set()
 
 
+# Выбор для просмотра - цена или состав блюда
 async def select_choice_price_or_structure_dish(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['category_dishes'] = callback_query.data
@@ -102,6 +112,7 @@ async def select_choice_price_or_structure_dish(callback_query: types.CallbackQu
     await FSMAdminSelectCategoryMenu.select_choice_price_or_structure.set()
 
 
+# Отправка сообщения с ценой блюда
 async def sending_name_price_dish(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         async with state.proxy() as data:
@@ -117,6 +128,7 @@ async def sending_name_price_dish(callback_query: types.CallbackQuery, state: FS
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор категории блюда
 async def select_name_dish_for_sending(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         keyboard_dishes = keyboards_for_admin.create_keyboard_dishes(data['category_dishes'])
@@ -124,6 +136,7 @@ async def select_name_dish_for_sending(callback_query: types.CallbackQuery, stat
     await FSMAdminSelectCategoryMenu.select_name_dish.set()
 
 
+# Отправка сообщения с составом блюда
 async def sending_structure_dish(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         data_structures = data_request.get_structure(callback_query.data)
@@ -139,6 +152,7 @@ async def sending_structure_dish(callback_query: types.CallbackQuery, state: FSM
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор категории продуктов
 async def select_category_products(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         keyboard_category_products = keyboards_for_admin.create_keyboard_category_products()
@@ -147,12 +161,14 @@ async def select_category_products(callback_query: types.CallbackQuery):
         await FSMAdminSelectCategoryProducts.select_category.set()
 
 
+# Отправка сообщения с ценой, процентов потерь продукта
 async def sending_name_price_product(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         category = callback_query.data
         name_price_percent_products = data_request.get_name_price_from_table_products(category)
         for name_price_percent in name_price_percent_products:
-            await bot.send_message(ID, text=name_price_percent)
+            await bot.send_message(ID, text=f'{name_price_percent[0]}; Цена -{name_price_percent[1]}; '
+                                            f'Процент потерь -{name_price_percent[2]}')
         start_keyboard = keyboards_for_admin.create_admin_keyboard()
         await bot.send_message(ID, 'В начало', reply_markup=start_keyboard)
         await state.finish()
@@ -162,6 +178,7 @@ async def sending_name_price_product(callback_query: types.CallbackQuery, state:
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор категории продукта
 async def select_category_for_change(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         await FSMAdminChangesProduct.select_changes_category.set()
@@ -170,6 +187,7 @@ async def select_category_for_change(callback_query: types.CallbackQuery):
                                                reply_markup=keyboard_category_products)
 
 
+# Выбор продукта
 async def select_name_product_for_change(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['category_product'] = callback_query.data
@@ -178,6 +196,7 @@ async def select_name_product_for_change(callback_query: types.CallbackQuery, st
     await FSMAdminChangesProduct.next()
 
 
+# Выбор цены продукта
 async def select_price_product_for_change(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['name_product'] = callback_query.data
@@ -185,6 +204,7 @@ async def select_price_product_for_change(callback_query: types.CallbackQuery, s
     await FSMAdminChangesProduct.next()
 
 
+# Запрос на изменение процента потерь
 async def select_percent_losses_product_for_change(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['price_product'] = message.text
@@ -193,6 +213,7 @@ async def select_percent_losses_product_for_change(message: types.Message, state
     await FSMAdminChangesProduct.next()
 
 
+# Выбор процента потерь или оставить как был
 async def select_choice_write_percent_losses(callback_query: types.CallbackQuery, state: FSMContext):
     if callback_query.data == 'No':
         async with state.proxy() as data:
@@ -207,6 +228,7 @@ async def select_choice_write_percent_losses(callback_query: types.CallbackQuery
         await FSMAdminChangesProduct.select_changes_percent_choice.set()
 
 
+# Выбор согласия с процентов потерь
 async def write_percent_losses(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['percent_loss'] = message.text
@@ -215,6 +237,7 @@ async def write_percent_losses(message: types.Message, state: FSMContext):
     await FSMAdminChangesProduct.next()
 
 
+# Обновление значения
 async def change_values_from_product(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         async with state.proxy() as data:
@@ -229,6 +252,7 @@ async def change_values_from_product(callback_query: types.CallbackQuery, state:
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор категории продукта
 async def select_category_product_for_add(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         await FSMAdminAddProduct.select_category_for_add.set()
@@ -237,6 +261,7 @@ async def select_category_product_for_add(callback_query: types.CallbackQuery):
                                                reply_markup=keyboard_category_products)
 
 
+# Выбор названия продукта
 async def select_name_product_for_add(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['category_product'] = callback_query.data
@@ -244,6 +269,7 @@ async def select_name_product_for_add(callback_query: types.CallbackQuery, state
     await FSMAdminAddProduct.next()
 
 
+# Выбор цена для продукта
 async def select_price_product_for_add(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name_product'] = message.text
@@ -251,6 +277,7 @@ async def select_price_product_for_add(message: types.Message, state: FSMContext
     await FSMAdminAddProduct.next()
 
 
+# Выбор процента потерь
 async def select_percent_losses_product_for_add(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['price_product'] = message.text
@@ -258,6 +285,7 @@ async def select_percent_losses_product_for_add(message: types.Message, state: F
     await FSMAdminAddProduct.next()
 
 
+# Добавление продукта в базу данных
 async def add_new_product(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['percent_product'] = message.text
@@ -273,18 +301,21 @@ async def add_new_product(message: types.Message, state: FSMContext):
         await message.reply(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор для удаления
 async def del_choice_menu_and_product(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         keyboard_for_deleting = keyboards_for_admin.create_keyboard_for_deleting()
         await callback_query.message.edit_text(text='Выбери откуда удалять', reply_markup=keyboard_for_deleting)
 
 
+# Выбор категории удаления
 async def select_category_menu_for_del(callback_query: types.CallbackQuery):
     keyboard_category_dishes = keyboards_for_admin.create_keyboard_category_dishes()
     await callback_query.message.edit_text(text='Выбери категорию', reply_markup=keyboard_category_dishes)
     await FSMAdminDelMenu.select_del_category.set()
 
 
+# Выбор что именно удалять
 async def select_name_dish_for_del(callback_query: types.CallbackQuery):
     category_menu = callback_query.data
     btn_type_menu = keyboards_for_admin.create_keyboard_name_from_menu(conf.type_menu[category_menu])
@@ -292,6 +323,7 @@ async def select_name_dish_for_del(callback_query: types.CallbackQuery):
     await FSMAdminDelMenu.next()
 
 
+# Удаление из базы данных блюда
 async def deleting_dish(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         name_dish = callback_query.data
@@ -305,6 +337,7 @@ async def deleting_dish(callback_query: types.CallbackQuery, state: FSMContext):
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор для удаления продукта
 async def select_category_product_for_del(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         await FSMAdminDelProducts.select_del_category.set()
@@ -312,6 +345,7 @@ async def select_category_product_for_del(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(text='Выбери категорию', reply_markup=keyboard_category_products)
 
 
+# Выбор что именно удалять
 async def select_name_product_for_del(callback_query: types.CallbackQuery):
     category_product = callback_query.data
     keyboard_products = keyboards_for_admin.create_keyboard_products(category_product)
@@ -319,6 +353,7 @@ async def select_name_product_for_del(callback_query: types.CallbackQuery):
     await FSMAdminDelProducts.next()
 
 
+# Удаления продукат из базы данных
 async def deleting_product(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         name_product = callback_query.data
@@ -332,12 +367,14 @@ async def deleting_product(callback_query: types.CallbackQuery, state: FSMContex
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Выбор блюда для добавления
 async def select_name_dish_for_add(callback_query: types.CallbackQuery):
     if callback_query.from_user.id == ID:
         await FSMAdminAddDishes.select_category_dish.set()
         await bot.send_message(ID, 'Напиши название блюда')
 
 
+# Выбор категории блюда для добавления
 async def select_category_dish_for_add(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name_dish'] = message.text
@@ -346,6 +383,7 @@ async def select_category_dish_for_add(message: types.Message, state: FSMContext
     await FSMAdminAddDishes.next()
 
 
+# Выбор продуктов в составе блюда
 async def select_products_for_add(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['category_dish'] = callback_query.data
@@ -355,6 +393,7 @@ async def select_products_for_add(callback_query: types.CallbackQuery, state: FS
     await FSMAdminAddDishes.next()
 
 
+# Выбор продукта для добавления
 async def select_name_product_for_add_dish(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['category_product'] = callback_query.data
@@ -363,6 +402,7 @@ async def select_name_product_for_add_dish(callback_query: types.CallbackQuery, 
     await FSMAdminAddDishes.next()
 
 
+# Выбор нетто продукта
 async def select_netto_product_for_add_dish(callback_query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['name_product'] = callback_query.data
@@ -370,6 +410,7 @@ async def select_netto_product_for_add_dish(callback_query: types.CallbackQuery,
     await FSMAdminAddDishes.next()
 
 
+# Расчёт брутто и цены в блюде продукта
 async def get_brutto_summed_product(name_product, netto_product):
     percent, price = data_request.get_percent_price(name_product)
     brutto_prod = round((float(netto_product) / (100 - float(percent))) * 100)
@@ -377,6 +418,7 @@ async def get_brutto_summed_product(name_product, netto_product):
     return brutto_prod, summed, price
 
 
+# Записаь в память данных продукта
 async def select_choice_next_or_stop(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['netto_product'] = message.text
@@ -397,6 +439,7 @@ prices = []
 summeds = []
 
 
+# Выбор продолжения для добавления или добавить в базу данных блюдо
 async def add_new_dish(callback_query: types.CallbackQuery, state: FSMContext):
     try:
         async with state.proxy() as data:
@@ -447,6 +490,7 @@ async def add_new_dish(callback_query: types.CallbackQuery, state: FSMContext):
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
+# Обновление цен блюд
 async def update_dishes(callback_query: types.CallbackQuery):
     try:
         if callback_query.from_user.id == ID:
@@ -459,7 +503,7 @@ async def update_dishes(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(f'Ошибка - {exp}, попробуй сначала', reply_markup=start_keyboard)
 
 
-# Регситрируем хэндлеры
+# Регистрация хэндлеров
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(make_changes_command, commands='admin', state=None)
 
